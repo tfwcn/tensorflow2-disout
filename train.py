@@ -39,20 +39,20 @@ class CustomLayer(tf.keras.layers.Layer):
 class CustomModel(tf.keras.Model):
     '''自定义模型'''
 
-    def __init__(self, conv_size, hidden_size, dropout_rate):
+    def __init__(self):
         '''初始化模型层'''
         super().__init__()
         self.conv1 = tf.keras.layers.Conv2D(
-            filters=32, kernel_size=conv_size, activation='relu')
-        self.disout1 = Disout(0.09, block_size=5)
+            filters=32, kernel_size=5, activation='relu')
+        self.disout1 = Disout(0.02, block_size=3)
         self.pool1 = tf.keras.layers.MaxPool2D(pool_size=2)
         self.conv2 = tf.keras.layers.Conv2D(
-            filters=64, kernel_size=conv_size, activation='relu')
-        self.disout2 = Disout(0.09, block_size=3)
+            filters=64, kernel_size=3, activation='relu')
+        self.disout2 = Disout(0.02, block_size=2)
         self.pool2 = tf.keras.layers.MaxPool2D(pool_size=2)
         self.flatten = tf.keras.layers.Flatten()
-        self.fc1 = CustomLayer(units=hidden_size, activation='relu')
-        self.dropout = tf.keras.layers.Dropout(rate=dropout_rate)
+        self.fc1 = CustomLayer(units=128, activation='relu')
+        self.dropout = tf.keras.layers.Dropout(rate=0.7)
         self.fc2 = CustomLayer(units=10, activation='softmax')
 
     def call(self, x):
@@ -69,6 +69,13 @@ class CustomModel(tf.keras.Model):
         x = self.dropout(x)
         return self.fc2(x)
 
+class CustomCallback(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, batch, logs=None):
+        if 'val_accuracy' in logs:
+            for layer in self.model.layers:
+                if isinstance(layer, Disout):
+                    layer.alpha = float(logs['val_accuracy'])
+            print('on_epoch_end update layer.alpha:', logs['val_accuracy'])
 
 def main():
     mnist = tf.keras.datasets.mnist
@@ -82,14 +89,14 @@ def main():
     print('x_test, y_test', x_test.shape, y_test.shape)
 
     # 卷积实现图片分类
-    model = CustomModel(5, 128, 0.65)
+    model = CustomModel()
 
     model.compile(
         optimizer=tf.keras.optimizers.Adam(),
         loss=tf.keras.losses.CategoricalCrossentropy(),
         metrics=['accuracy'])
 
-    model.fit(x_train, y_train, epochs=10, validation_data=(x_test, y_test))
+    model.fit(x_train, y_train, epochs=50, validation_data=(x_test, y_test), callbacks=[CustomCallback()])
 
 
 if __name__ == '__main__':
@@ -100,5 +107,5 @@ if __name__ == '__main__':
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
     # tf.config.experimental.set_visible_devices(gpus[0], 'GPU')
-    tf.config.experimental.set_visible_devices(cpus[0], 'CPU')
+    # tf.config.experimental.set_visible_devices(cpus[0], 'CPU')
     main()

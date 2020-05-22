@@ -50,8 +50,8 @@ class Disout(tf.keras.layers.Layer):
                 # 叠加扰动
                 x_max = tf.reduce_max(x, axis=(1,2), keepdims=True)
                 x_min = tf.reduce_min(x, axis=(1,2), keepdims=True)
-                x_block_random = tf.random.normal(x_shape, dtype=x.dtype)*(x_max-x_min)+x_min
-                x_block_random = (x_block_random + x) / 2
+                x_block_random = tf.random.normal(x_shape, dtype=x.dtype) * (x_max - x_min) + x_min
+                x_block_random = x_block_random * (1.0 - self.alpha) + x * self.alpha
                 x = x * (1-x_block) + x_block_random * x_block
                 return x
             else:
