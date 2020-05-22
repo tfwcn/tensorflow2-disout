@@ -12,7 +12,7 @@ This code is the Pytorch implementation of AAAI 2020 paper [Beyond Dropout: Feat
 Deep neural networks often consist of a great number of trainable parameters for extracting powerful features from given datasets. On one hand, massive trainable parameters significantly enhance the performance of these deep networks. On the other hand, they bring the problem of over-fitting. To this end, dropout based methods disable some elements in the output feature maps during the training phase for reducing the co-adaptation of neurons. Although the generalization ability of the resulting models can be enhanced by these approaches, the conventional binary dropout is not the optimal solution. Therefore, we investigate the empirical Rademacher complexity related to intermediate layers of deep neural networks and propose a feature distortion method (Disout) for addressing the aforementioned problem. In the training period, randomly selected elements in the feature maps will be replaced with specific values by exploiting the generalization error bound. The superiority of the proposed feature map distortion for producing deep neural network with higher testing performance is analyzed and demonstrated on several benchmark image datasets.
 
 <p align="center">
-<img src="images/disout.png" width="800">
+<img src="https://github.com/huawei-noah/Disout/blob/master/images/disout.png" width="800">
 </p>
 
 
@@ -49,11 +49,11 @@ python train_imagenet.py --dist_prob 0.07 --alpha 1.0 --block_size 7
 ## Results
 
 <p align="center">
-<img src="images/result.png" width="800">
+<img src="https://github.com/huawei-noah/Disout/blob/master/images/result.png" width="800">
 </p>
 
 <p align="center">
-<img src="images/result2.png" width="800">
+<img src="https://github.com/huawei-noah/Disout/blob/master/images/result2.png" width="800">
 </p>
 
 You should achieve about 94.50% accuracy on CIFAR-10, and 78.76% top-1 accuracy on ImageNet with the default setting.
