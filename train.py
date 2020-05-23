@@ -1,5 +1,5 @@
 import tensorflow as tf
-from disout_tf2 import Disout
+from disout_tf2 import Disout, Disout1D
 
 
 class CustomLayer(tf.keras.layers.Layer):
@@ -52,7 +52,8 @@ class CustomModel(tf.keras.Model):
         self.pool2 = tf.keras.layers.MaxPool2D(pool_size=2)
         self.flatten = tf.keras.layers.Flatten()
         self.fc1 = CustomLayer(units=128, activation='relu')
-        self.dropout = tf.keras.layers.Dropout(rate=0.7)
+        # self.dropout = tf.keras.layers.Dropout(rate=0.7)
+        self.disout3 = Disout1D(0.3, block_size=2)
         self.fc2 = CustomLayer(units=10, activation='softmax')
 
     def call(self, x):
@@ -66,7 +67,8 @@ class CustomModel(tf.keras.Model):
         x = self.pool2(x)
         x = self.flatten(x)
         x = self.fc1(x)
-        x = self.dropout(x)
+        # x = self.dropout(x)
+        x = self.disout3(x)
         return self.fc2(x)
 
 class CustomCallback(tf.keras.callbacks.Callback):
@@ -75,7 +77,7 @@ class CustomCallback(tf.keras.callbacks.Callback):
             for layer in self.model.layers:
                 if isinstance(layer, Disout):
                     layer.alpha = float(logs['val_accuracy'])
-            print('on_epoch_end update layer.alpha:', logs['val_accuracy'])
+            # print('on_epoch_end update layer.alpha:', logs['val_accuracy'])
 
 def main():
     mnist = tf.keras.datasets.mnist
@@ -96,7 +98,7 @@ def main():
         loss=tf.keras.losses.CategoricalCrossentropy(),
         metrics=['accuracy'])
 
-    model.fit(x_train, y_train, epochs=50, validation_data=(x_test, y_test), callbacks=[CustomCallback()])
+    model.fit(x_train, y_train, epochs=20, validation_data=(x_test, y_test), callbacks=[CustomCallback()])
 
 
 if __name__ == '__main__':
