@@ -44,25 +44,27 @@ class CustomModel(tf.keras.Model):
         super().__init__()
         self.conv1 = tf.keras.layers.Conv2D(
             filters=32, kernel_size=5, activation='relu')
-        self.disout1 = Disout(0.02, block_size=3)
+        self.disout1 = Disout(0.05, block_size=3)
         self.pool1 = tf.keras.layers.MaxPool2D(pool_size=2)
         self.conv2 = tf.keras.layers.Conv2D(
             filters=64, kernel_size=3, activation='relu')
-        self.disout2 = Disout(0.02, block_size=2)
+        self.disout2 = Disout(0.05, block_size=2)
         self.pool2 = tf.keras.layers.MaxPool2D(pool_size=2)
         self.flatten = tf.keras.layers.Flatten()
         self.fc1 = CustomLayer(units=128, activation='relu')
         # self.dropout = tf.keras.layers.Dropout(rate=0.7)
-        self.disout3 = Disout1D(0.3, block_size=2)
+        self.disout3 = Disout1D(0.3, block_size=1)
         self.fc2 = CustomLayer(units=10, activation='softmax')
 
     def call(self, x):
         '''运算部分'''
         x = self.conv1(x)
+        # self.disout1.weight_behind = self.conv1.weights
         x = self.disout1(x)
         x = self.pool1(x)
 
         x = self.conv2(x)
+        # self.disout2.weight_behind = self.conv2.weights
         x = self.disout2(x)
         x = self.pool2(x)
         x = self.flatten(x)
@@ -78,6 +80,7 @@ class CustomCallback(tf.keras.callbacks.Callback):
                 if isinstance(layer, Disout):
                     layer.alpha = float(logs['val_accuracy'])
             # print('on_epoch_end update layer.alpha:', logs['val_accuracy'])
+        pass
 
 def main():
     mnist = tf.keras.datasets.mnist

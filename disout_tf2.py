@@ -10,6 +10,7 @@ class Disout(tf.keras.layers.Layer):
     def __init__(self, dist_prob, block_size=5, alpha=0.5, **kwargs):
         super(Disout, self).__init__(**kwargs)
         self.dist_prob = dist_prob
+        self.weight_behind=None
 
         self.alpha = alpha
         self.block_size = block_size
@@ -36,8 +37,9 @@ class Disout(tf.keras.layers.Layer):
                 x_block_num = (x_size_f[0] * x_size_f[1]) * self.dist_prob / (x_block_size_f[0] * x_block_size_f[1])
                 # 计算block在中心区域出现的概率
                 x_block_rate = x_block_num / ((x_size_f[0] - x_block_size_f[0] + 1) * (x_size_f[1] - x_block_size_f[1] + 1))
+                # tf.print('x_block_rate:', x_block_rate)
                 # 根据概率生成block区域
-                x_block_center = tf.random.normal((x_shape[0], x_size[0] - x_block_size[0] + 1, x_size[1] - x_block_size[1] + 1, x_shape[3]), dtype=tf.float32)
+                x_block_center = tf.random.uniform((x_shape[0], x_size[0] - x_block_size[0] + 1, x_size[1] - x_block_size[1] + 1, x_shape[3]), dtype=tf.float32)
                 x_block_padding_t = x_block_size[0] // 2
                 x_block_padding_b = x_size_f[0] - tf.cast(x_block_padding_t, tf.float32) - (x_size_f[0] - x_block_size_f[0] + 1.0)
                 x_block_padding_b = tf.cast(x_block_padding_b, tf.int32)
@@ -47,12 +49,38 @@ class Disout(tf.keras.layers.Layer):
                 x_block_padding = tf.pad(x_block_center,[[0, 0],[x_block_padding_t, x_block_padding_b],[x_block_padding_l, x_block_padding_r],[0, 0]])
                 x_block = tf.cast(x_block_padding<x_block_rate, tf.float32)
                 x_block = tf.nn.max_pool2d(x_block, ksize=[self.block_size, self.block_size], strides=[1, 1], padding='SAME')
+                # block百分比
+                # x_block_percent_ones = tf.reduce_sum(x_block) / tf.reduce_prod(tf.cast(tf.shape(x_block), tf.float32))
+                # tf.print('x_block_percent_ones:', x_block_percent_ones, tf.shape(x_block))
                 # 叠加扰动
                 x_max = tf.reduce_max(x, axis=(1,2), keepdims=True)
                 x_min = tf.reduce_min(x, axis=(1,2), keepdims=True)
-                x_block_random = tf.random.normal(x_shape, dtype=x.dtype) * (x_max - x_min) + x_min
+                x_block_random = tf.random.uniform(x_shape, dtype=x.dtype) * (x_max - x_min) + x_min
                 x_block_random = x_block_random * (1.0 - self.alpha) + x * self.alpha
                 x = x * (1-x_block) + x_block_random * x_block
+                # if not (self.weight_behind is None) and not(len(self.weight_behind)==0):
+                #     wtsize=tf.shape(self.weight_behind[0])[0]
+                #     weight_max=tf.math.reduce_max(self.weight_behind[0], axis=-2, keepdims=True)
+                #     sig = tf.ones(tf.shape(weight_max),dtype=weight_max.dtype)
+                #     sig_mask = tf.cast(tf.random.uniform(tf.shape(weight_max),dtype=sig.dtype)<0.5,dtype=tf.float32)
+                #     sig = sig * (1 - sig_mask) - sig_mask
+                #     weight_max = weight_max * sig 
+                #     weight_mean = tf.math.reduce_mean(weight_max, axis=(0,1), keepdims=True)
+                #     if wtsize==1:
+                #         weight_mean=0.1*weight_mean
+                #     #print(weight_mean)
+                # mean=tf.math.reduce_mean(x)
+                # var=tf.math.reduce_variance(x)
+
+                # if not (self.weight_behind is None) and not(len(self.weight_behind)==0):
+                #     dist=self.alpha*weight_mean*(var**0.5)*tf.random.normal(tf.shape(x), dtype=x.dtype)
+                # else:
+                #     dist=self.alpha*0.01*(var**0.5)*tf.random.normal(tf.shape(x), dtype=x.dtype)
+
+                # x=x*x_block
+                # dist=dist*(1-x_block)
+                # x=x+dist
+                # x=x/x_block_percent_ones
                 return x
             else:
                 return x
@@ -97,7 +125,7 @@ class Disout1D(tf.keras.layers.Layer):
                 # 计算block在中心区域出现的概率
                 x_block_rate = x_block_num / ((x_size_f - x_block_size_f + 1))
                 # 根据概率生成block区域
-                x_block_center = tf.random.normal((x_shape[0], x_size - x_block_size + 1), dtype=tf.float32)
+                x_block_center = tf.random.uniform((x_shape[0], x_size - x_block_size + 1), dtype=tf.float32)
                 x_block_padding_t = x_block_size // 2
                 x_block_padding_b = x_size_f - tf.cast(x_block_padding_t, tf.float32) - (x_size_f - x_block_size_f + 1.0)
                 x_block_padding_b = tf.cast(x_block_padding_b, tf.int32)
@@ -109,7 +137,7 @@ class Disout1D(tf.keras.layers.Layer):
                 # 叠加扰动
                 x_max = tf.reduce_max(x, axis=1, keepdims=True)
                 x_min = tf.reduce_min(x, axis=1, keepdims=True)
-                x_block_random = tf.random.normal(x_shape, dtype=x.dtype) * (x_max - x_min) + x_min
+                x_block_random = tf.random.uniform(x_shape, dtype=x.dtype) * (x_max - x_min) + x_min
                 x_block_random = x_block_random * (1.0 - self.alpha) + x * self.alpha
                 x = x * (1-x_block) + x_block_random * x_block
                 return x
