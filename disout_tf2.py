@@ -7,7 +7,7 @@ class Disout(tf.keras.layers.Layer):
     论文：https://arxiv.org/abs/2002.11022
     '''
 
-    def __init__(self, dist_prob, block_size=5, alpha=0.5, **kwargs):
+    def __init__(self, dist_prob, block_size=5, alpha=1, **kwargs):
         super(Disout, self).__init__(**kwargs)
         self.dist_prob = dist_prob
         self.weight_behind=None
@@ -52,12 +52,24 @@ class Disout(tf.keras.layers.Layer):
                 # block百分比
                 # x_block_percent_ones = tf.reduce_sum(x_block) / tf.reduce_prod(tf.cast(tf.shape(x_block), tf.float32))
                 # tf.print('x_block_percent_ones:', x_block_percent_ones, tf.shape(x_block))
+                # 特征叠加
+                x_abs = tf.abs(x)
+                x_sum = tf.math.reduce_sum(x_abs, axis=-1, keepdims=True)
+                x_max = tf.math.reduce_max(x_sum, axis=(1, 2), keepdims=True)
+                x_max_c = tf.math.reduce_max(x_abs, axis=(1, 2), keepdims=True)
+                x_sum_c = tf.math.reduce_sum(x_max_c, axis=-1, keepdims=True)
+                x_v = x_sum / x_sum_c
+                # tf.print('x_v:', tf.shape(x_v), tf.math.reduce_min(x_v), tf.math.reduce_max(x_v))
+                # 特征方差
+                # x_variance = tf.math.reduce_variance(x_sum, axis=(1, 2), keepdims=True)
+                # tf.print('x_variance:', tf.shape(x_variance), tf.math.reduce_min(x_variance), tf.math.reduce_max(x_variance))
                 # 叠加扰动
                 x_max = tf.reduce_max(x, axis=(1,2), keepdims=True)
                 x_min = tf.reduce_min(x, axis=(1,2), keepdims=True)
                 x_block_random = tf.random.uniform(x_shape, dtype=x.dtype) * (x_max - x_min) + x_min
-                x_block_random = x_block_random * (1.0 - self.alpha) + x * self.alpha
+                x_block_random = x_block_random * (self.alpha * x_v + 0.3) + x * (1.0 - self.alpha * x_v - 0.3)
                 x = x * (1-x_block) + x_block_random * x_block
+
                 # if not (self.weight_behind is None) and not(len(self.weight_behind)==0):
                 #     wtsize=tf.shape(self.weight_behind[0])[0]
                 #     weight_max=tf.math.reduce_max(self.weight_behind[0], axis=-2, keepdims=True)

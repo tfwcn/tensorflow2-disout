@@ -44,11 +44,11 @@ class CustomModel(tf.keras.Model):
         super().__init__()
         self.conv1 = tf.keras.layers.Conv2D(
             filters=32, kernel_size=5, activation='relu')
-        self.disout1 = Disout(0.05, block_size=3)
+        self.disout1 = Disout(0.1, block_size=3)
         self.pool1 = tf.keras.layers.MaxPool2D(pool_size=2)
         self.conv2 = tf.keras.layers.Conv2D(
             filters=64, kernel_size=3, activation='relu')
-        self.disout2 = Disout(0.05, block_size=2)
+        self.disout2 = Disout(0.1, block_size=2)
         self.pool2 = tf.keras.layers.MaxPool2D(pool_size=2)
         self.flatten = tf.keras.layers.Flatten()
         self.fc1 = CustomLayer(units=128, activation='relu')
@@ -75,10 +75,10 @@ class CustomModel(tf.keras.Model):
 
 class CustomCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, batch, logs=None):
-        if 'val_accuracy' in logs:
-            for layer in self.model.layers:
-                if isinstance(layer, Disout):
-                    layer.alpha = float(logs['val_accuracy'])
+        # if 'val_accuracy' in logs:
+        #     for layer in self.model.layers:
+        #         if isinstance(layer, Disout):
+        #             layer.alpha = float(logs['val_accuracy'])
             # print('on_epoch_end update layer.alpha:', logs['val_accuracy'])
         pass
 
